@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import LabelBinarizer
 import string
 from keras.optimizers import Adam, SGD
@@ -62,12 +64,17 @@ inp_shape = X_train.shape[1]
 model = Sequential()
 model.add(Dense(512, activation='relu', input_shape=(inp_shape,)))
 model.add(Dense(512, activation='relu'))
+model.add(Dropout(0.4))
+model.add(Dense(512, activation='relu'))
 model.add(Dense(512, activation='relu'))
 model.add(Dense(unique_labels, activation='softmax'))
 
+callback = EarlyStopping(monitor='val_loss', patience=4)
+
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-run_model = model.fit(X_train, y_train_hot, batch_size=256, epochs=1, verbose=1,
-                   validation_data=(X_val, y_val_hot))
+
+run_model = model.fit(X_train, y_train_hot, batch_size=256, epochs=25, verbose=1,
+                   validation_data=(X_val, y_val_hot), callbacks=[callback])
 
 [test_loss, test_acc] = model.evaluate(X_test, y_test_hot)
 
@@ -90,14 +97,22 @@ Y_val   = LB.transform(y_val)
 Y_test  = LB.transform(y_test)
 
 model2 = Sequential()
-model2.add(Dense(512, input_dim=784, activation='relu'))
-model2.add(Dense(512, activation='relu'))
-model2.add(Dense(512, activation='relu'))
-model2.add(Dense(26, activation='softmax')) #last layer
+model2.add(Dense(256, input_dim=(x_train.shape[1]), activation='relu'))
+model2.add(Dropout(0.4))
+
+model2.add(Dense(256, activation='relu'))
+model2.add(Dropout(0.4))
+
+model2.add(Dense(256, activation='relu'))
+model2.add(Dropout(0.4))
+
+model2.add(Dense(Y_train.shape[1], activation='softmax')) #last layer
+
+es_callback = EarlyStopping(monitor='val_loss', patience=5)
 
 optimizer = Adam(lr=0.001)
 model2.compile(optimizer=optimizer, loss = "categorical_crossentropy", metrics=['accuracy']) 
-model2.fit(x_train, Y_train, batch_size=32, epochs=1, verbose=1)
+model2.fit(x_train, Y_train, batch_size=32, epochs=50, verbose=1, validation_data=(x_val, Y_val), callbacks=[es_callback])
 
 y_pred = model2.predict(x_val)
 print('MAE:', mean_absolute_error(Y_val, y_pred).round(3))
