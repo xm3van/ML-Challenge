@@ -127,131 +127,10 @@ print('Accuracy Validation:', accuracy_score(y_val, baseline.predict(x_val)).rou
 print("Results: Loss = {}, accuracy = {}".format(test_loss, test_acc))
 
 
+
+#############################
 # # Task 2
-
-# ## Additional Model
-
-# In[6]:
-
-
-from keras.models import Sequential
-from keras.layers.convolutional import Conv2D
-from keras.layers.convolutional import MaxPooling2D
-from keras.layers.core import Activation
-from keras.layers.core import Flatten
-from keras.layers.core import Dense
-from keras.layers.core import Dropout
-
-from keras.optimizers import RMSprop
-from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ReduceLROnPlateau
-
-from sklearn.model_selection import train_test_split
-
-
-
-#Prep data 
-##Normalisation
-img = img/ 255.0 #float value to keep values consitent. 
-
-##Reshape 
-img = img.reshape(-1,28,28,1) #Necesssary for CNN (more info Rosenbrock, 2017, p181)
-
-#Train (0.8) / Test (0.2)
-X_train, X_test, y_train, y_test= train_test_split(img, lbl, test_size=0.2, random_state=1)
-
-#Test (0.60)/ val (0.25*0.8 = 0.2)
-X_train, X_val, y_train, y_val  = train_test_split(X_train, y_train, test_size=0.25, random_state=1) # 0.25 x 0.8 = 0.2
-
-#onehot encoding
-onehot = LabelBinarizer()
-y_train_hot = onehot.fit_transform(y_train)
-y_val_hot   = onehot.transform(y_val)
-y_test_hot  = onehot.transform(y_test)
-
-# Set a learning rate annealer (Ghouzam, 2017)
-learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc', 
-                                            patience=3, 
-                                            verbose=1, 
-                                            factor=0.5, 
-                                            min_lr=0.00001)
-
-epochs = 1 
-batch_size = 80
-
-# data augmentation to prevent overfitting (Ghouzam, 2017)
-datagen = ImageDataGenerator(
-        featurewise_center=False,  # set input mean to 0 over the dataset
-        samplewise_center=False,  # set each sample mean to 0
-        featurewise_std_normalization=False,  # divide inputs by std of the dataset
-        samplewise_std_normalization=False,  # divide each input by its std
-        zca_whitening=False,  # apply ZCA whitening
-        rotation_range=3,  # randomly rotate images in the range (degrees, 0 to 54) mot 90 as ME
-        zoom_range = 0.1, # Randomly zoom image 
-        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
-        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
-        horizontal_flip=False,  # randomly flip images - why bd, mw
-        vertical_flip=False)  # randomly flip images - pd
-
-datagen.fit(X_train)
-
-#CNN model (adapted from LeCun, 1998)
-model3 = Sequential()
-
-# first set of CONV => RELU => POOL layers
-model3.add(Conv2D(filters=20,
-                  kernel_size = (5, 5), # filter matrix
-                  padding = 'same', # preservs borders 
-                  activation = 'relu', #activation function 
-                  input_shape = (28, 28, 1))) #necessary input format
-model3.add(Conv2D(filters=20,
-                  kernel_size = (5, 5), # filter matrix
-                  padding = 'same', # preservs borders 
-                  activation = 'relu'))
-model3.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2))) #downsampling
-model3.add(Dropout(0.0625)) #prevent overfitting 
-
-# second set of CONV => RELU => POOL layers
-model3.add(Conv2D(filters=50,
-                  kernel_size = (5, 5), # filter matrix
-                  padding = 'same', # preservs borders 
-                  activation = 'relu')) #necessary input format
-model3.add(Conv2D(filters=50,
-                  kernel_size = (5, 5), # filter matrix
-                  padding = 'same', # preservs borders 
-                  activation = 'relu')) #necessary input format
-model3.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2))) #downsampling
-model3.add(Dropout(0.0625))
-
-# first (and only) set of FC => RELU layers
-model3.add(Flatten())
-model3.add(Dense(500, activation = 'relu'))
-model3.add(Dropout(0.125))
-
-# softmax classifier
-model3.add(Dense(26, activation = "softmax"))
-
-# Define the optimizer
-optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
-
-# Compile the model
-model3.compile(optimizer = optimizer , loss = "categorical_crossentropy", metrics=["accuracy"])
-
-#fit 
-history = model3.fit_generator(datagen.flow(X_train,y_train_hot, batch_size=batch_size),
-                              epochs = epochs, validation_data = (X_val,y_val_hot),
-                              verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size
-                              , callbacks=[learning_rate_reduction])
-
-
-# ## Create list of models
-
-# In[7]:
-
-
-## Create list of models
-list_of_model = [model,model2, model3]
-
+#############################
 
 # ## Supporting functions
 
@@ -328,6 +207,7 @@ def find_contour(dic): #dictionary with rectangle contour & index as key
     return new_contours
 
 
+
 ### removes contours of too small size
 def unwanted(dic): #List of array of contours// assumes contour more than 4 
         
@@ -368,6 +248,8 @@ def unwanted(dic): #List of array of contours// assumes contour more than 4
             
     return new_contours
 
+
+
 ### find 4 contour if we do not have 4 contours 
 def find_4contours(contours_found): # dic with index keys 
     
@@ -393,12 +275,75 @@ def check(contours_found):
         return check(find_4contours(contours_found))
 
 
-# ## Execution
-
-# In[9]:
+# In[167]:
 
 
+#Extract most likely set of 2 from prediction of one letter
+def top_2_letter(pred_array):
+    #index dic 
+    pred_prob = {}
+    for ind, prob in enumerate(pred_array[0]):
+        pred_prob[ind+1] = prob
+
+    #sort
+    highest_prob_t5 = sorted(pred_prob.items(), key=lambda x:x[-1])[-2:]
+
+    return highest_prob_t5
+
+top_2_letter(pred)
+
+
+# In[175]:
+
+
+#extract top 5 most likely prediction of set with 4 letter prediction
+#with respective 2 set of prediction and prob
+def extract_top_5(test):
+
+    #Combination set of zero & ones
+    combi_set =[]
+    for l1 in range(2):
+        for l2 in range(2):
+            for l3 in range(2):
+                for l4 in range(2):
+                    combi_set.append([l1,l2,l3,l4])
+ 
+    #extract cobination from most set
+    p_set ={}   
+    for combi in combi_set:
+
+            cap = "" 
+            prob_sum = 0
+
+            for ind, c in enumerate(combi): 
+                
+                #if number smaller than 10                
+                if test[ind][c][0] < 10:
+                    cap += "0" + str(test[ind][c][0])
+                else:
+                    cap += str(test[ind][c][0]) #index
+                
+                prob_sum += test[ind][c][1] #prob 
+
+            p_set[cap] = prob_sum
+
+    #extrat 5 most likely predictions
+    t5_list = sorted(p_set.items(), key=lambda x:x[-1], reverse = True)[:5]
+
+    #print(cap, prob_sum)
+    p5 = []
+    for i in t5_list: 
+        p5.append( i[0])
+
+    return p5
+
+
+
+# In[176]:
+
+###################################
 ## Execution of Part 2
+###################################
 
 #load dataset 
 path = join( getcwd(), 'data', 'test-dataset.npy' ) 
@@ -477,10 +422,9 @@ for captcha in captchas:
         #take dictionary with index as key in form {0: (103, 9, 20, 17), ...}
         
     pred5 =[] #stores 5 pred
-    for model in list_of_model:
-        
-        captcha = ""
-        for key in new_contours.keys():
+    
+    set_top2_prediction = []
+    for key in new_contours.keys():
 
             x, y, w, h = new_contours[key]
 
@@ -493,30 +437,25 @@ for captcha in captchas:
             
             #Normalisation/ reshape
             resized_std = resized/255.0  # Normalisation 
-
-            ##conditional reshape
-            if model == model3:
-                input_for_model = resized_std.reshape(-1,28,28,1)
-            else:
-                input_for_model = resized_std.reshape(-1,784)
+            
+            #reshape for model
+            input_for_model = resized_std.reshape(-1,784)
                 
             #prediction
             pred = model.predict(input_for_model)
+            
+            #pred          
+            set_top2_prediction.append( top_2_letter(pred) )
 
             #append list 
-            letter = onehot.inverse_transform(pred)[0]
-
-            #correct format
-            if letter < 10:
-                captcha += "0" + str( letter )
-            else:
-                captcha += str( letter ) 
-        
-        
-        pred5.append(captcha)
-        
-    final_pred.append(pred5)
-    print(pred5)
+            #letter = onehot.inverse_transform(pred)
+            
+    pred5.append(set_top2_prediction)
+    
+    top_5 = extract_top_5(pred5[0])
+                
+    final_pred.append(top_5)
+   
     
     
 ## Store pred in csv 
