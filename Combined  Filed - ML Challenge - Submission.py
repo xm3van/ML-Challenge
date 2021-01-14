@@ -28,7 +28,8 @@ import cv2
 from os.path import join
 from os import getcwd
 from keras.preprocessing.image import ImageDataGenerator
-
+from sklearn.metrics import confusion_matrix
+import itertools
 
 ##
 
@@ -103,7 +104,18 @@ run_model = model.fit(X_train, y_train_hot, batch_size=256, epochs=25, verbose=1
 
 print("Results multi level perceptron: Loss = {}, accuracy = {}".format(test_loss, test_acc))
 
-##
+## Training and validation loss, training and validation accuracy
+
+fig, ax = plt.subplots(2,1)
+ax[0].plot(run_model.history['loss'], color='b', label="Training loss")
+ax[0].plot(run_model.history['val_loss'], color='r', label="validation loss",axes =ax[0])
+legend = ax[0].legend(loc='best', shadow=True)
+
+ax[1].plot(run_model.history['accuracy'], color='b', label="Training accuracy")
+ax[1].plot(run_model.history['val_accuracy'], color='r',label="Validation accuracy")
+legend = ax[1].legend(loc='best', shadow=True)
+
+## 
 
 ## Model 2: Neural Network
 
@@ -118,6 +130,21 @@ LB = LabelBinarizer()
 Y_train = LB.fit_transform(y_train)
 Y_val   = LB.transform(y_val)
 Y_test  = LB.transform(y_test)
+
+datagen = ImageDataGenerator(
+        featurewise_center=False,
+        samplewise_center=False, 
+        featurewise_std_normalization=False, 
+        samplewise_std_normalization=False, 
+        zca_whitening=False, 
+        rotation_range=3,  
+        zoom_range = 0.1, 
+        width_shift_range=0.1, 
+        height_shift_range=0.1, 
+        horizontal_flip=False, 
+        vertical_flip=False)
+
+datagen.fit(x_train.reshape(-1, 28, 28, 1))
 
 model2 = Sequential()
 model2.add(Dense(256, input_dim=(x_train.shape[1]), activation='relu'))
@@ -149,7 +176,83 @@ print('Accuracy Validation:', accuracy_score(y_val, baseline.predict(x_val)).rou
 [test_loss, test_acc] = model2.evaluate(x_test, Y_test)
 print("Results: Loss = {}, accuracy = {}".format(test_loss, test_acc))
 
+## Confusion matrix
 
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+# Predict the values from the validation dataset
+Y_pred = model2.predict(x_val)
+# Convert predictions classes to one hot vectors 
+Y_pred_classes = np.argmax(Y_pred,axis = 1) 
+# Convert validation observations to one hot vectors
+Y_true = np.argmax(Y_val,axis = 1) 
+# compute the confusion matrix
+confusion_mtx = confusion_matrix(Y_true, Y_pred_classes) 
+# plot the confusion matrix
+plot_confusion_matrix(confusion_mtx, classes = range(26)) 
+
+## Errors
+
+errors = (Y_pred_classes - Y_true != 0)
+
+Y_pred_classes_errors = Y_pred_classes[errors]
+Y_pred_errors = Y_pred[errors]
+Y_true_errors = Y_true[errors]
+X_val_errors = x_val[errors]
+
+def display_errors(errors_index,img_errors,pred_errors, obs_errors):
+    """ This function shows 6 images with their predicted and real labels"""
+    n = 0
+    nrows = 2
+    ncols = 3
+    fig, ax = plt.subplots(nrows,ncols,sharex=True,sharey=True)
+    for row in range(nrows):
+        for col in range(ncols):
+            error = errors_index[n]
+            ax[row,col].imshow((img_errors[error]).reshape((28,28)))
+            ax[row,col].set_title("Predicted label :{}\nTrue label :{}".format(pred_errors[error],obs_errors[error]))
+            n += 1
+
+# Probabilities of the wrong predicted numbers
+Y_pred_errors_prob = np.max(Y_pred_errors,axis = 1)
+
+# Predicted probabilities of the true values in the error set
+true_prob_errors = np.diagonal(np.take(Y_pred_errors, Y_true_errors, axis=1))
+
+# Difference between the probability of the predicted label and the true label
+delta_pred_true_errors = Y_pred_errors_prob - true_prob_errors
+
+# Sorted list of the delta prob errors
+sorted_dela_errors = np.argsort(delta_pred_true_errors)
+
+# Top 6 errors 
+most_important_errors = sorted_dela_errors[-6:]
+
+# Show the top 6 errors
+display_errors(most_important_errors, X_val_errors, Y_pred_classes_errors, Y_true_errors)
 
 #############################
 # # Task 2
