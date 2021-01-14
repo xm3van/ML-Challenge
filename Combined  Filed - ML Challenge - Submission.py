@@ -27,6 +27,7 @@ import math
 import cv2
 from os.path import join
 from os import getcwd
+from keras.preprocessing.image import ImageDataGenerator
 
 
 ##
@@ -63,7 +64,6 @@ inp_shape = X_train.shape[1]
 
 ## ImageDataGenerator function for data augmentation
 
-from keras.preprocessing.image import ImageDataGenerator
 datagen = ImageDataGenerator(
         featurewise_center=False,
         samplewise_center=False, 
