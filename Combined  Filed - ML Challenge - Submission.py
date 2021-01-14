@@ -38,9 +38,7 @@ import itertools
 ## Model 1: Multilayer perceptron 
 
 ## import data set 
-path = join( getcwd(), 'data', 'training-dataset.npz' ) 
-
-with np.load(path) as data: 
+with np.load('training-dataset.npz') as data: 
     
     img = data['x']
     lbl = data['y']
