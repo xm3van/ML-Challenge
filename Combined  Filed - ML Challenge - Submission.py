@@ -460,5 +460,5 @@ for captcha in captchas:
     
 ## Store pred in csv 
 csv_pred = np.array(final_pred)
-np.savetxt("predictions.csv", csv_pred, fmt="%s", delimiter=",")
+np.savetxt("predictions.csv", csv_pred, fmt="08%d", delimiter=",")
 
