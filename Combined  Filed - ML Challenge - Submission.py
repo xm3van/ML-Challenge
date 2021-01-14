@@ -562,14 +562,11 @@ for captcha in captchas:
             #reshape for model
             input_for_model = resized_std.reshape(-1,784)
                 
-            #prediction
+            #prediction matrix with prob
             pred = model.predict(input_for_model)
             
-            #pred          
+            #top 2 pred per letter       
             set_top2_prediction.append( top_2_letter(pred) )
-
-            #append list 
-            #letter = onehot.inverse_transform(pred)
             
     pred5.append(set_top2_prediction)
     
