@@ -45,6 +45,8 @@ with np.load(path) as data:
     img = data['x']
     lbl = data['y']
     
+img = img / 255.0
+    
 X_train, X_test, y_train, y_test = tts(img, lbl, test_size=0.2)
 X_train, X_val, y_train, y_val = tts(X_train, y_train, test_size=0.25)
 
@@ -121,10 +123,6 @@ legend = ax[1].legend(loc='best', shadow=True)
 
 x, x_test, y, y_test = tts(img, lbl, test_size=0.15, train_size=0.85) 
 x_train, x_val, y_train, y_val = tts(x, y, test_size=0.17647059, train_size=0.82352941) 
-
-scaler = StandardScaler()
-x_train = scaler.fit_transform(x_train)
-x_test = scaler.transform(x_test)
 
 LB = LabelBinarizer()
 Y_train = LB.fit_transform(y_train)
