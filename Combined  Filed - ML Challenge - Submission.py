@@ -466,8 +466,7 @@ def extract_top_5(test):
 ###################################
 
 #load dataset 
-path = join( getcwd(), 'data', 'test-dataset.npy' ) 
-captchas = np.load(path).astype('uint8') # test_ll = test_labelless
+captchas = np.load('test-dataset.npy').astype('uint8') # test_ll = test_labelless
 
 
 #iterate through case by case: 
