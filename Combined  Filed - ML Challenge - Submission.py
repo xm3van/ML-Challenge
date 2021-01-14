@@ -414,8 +414,6 @@ def top_2_letter(pred_array):
 
     return highest_prob_t5
 
-top_2_letter(pred)
-
 
 # In[175]:
 
