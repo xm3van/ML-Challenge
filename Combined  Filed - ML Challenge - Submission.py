@@ -61,12 +61,35 @@ y_test_hot = onehot.transform(y_test)
 
 inp_shape = X_train.shape[1]
 
+## ImageDataGenerator function for data augmentation
+
+from keras.preprocessing.image import ImageDataGenerator
+datagen = ImageDataGenerator(
+        featurewise_center=False,
+        samplewise_center=False, 
+        featurewise_std_normalization=False, 
+        samplewise_std_normalization=False, 
+        zca_whitening=False, 
+        rotation_range=3,  
+        zoom_range = 0.1, 
+        width_shift_range=0.1, 
+        height_shift_range=0.1, 
+        horizontal_flip=False, 
+        vertical_flip=False)
+
+
+datagen.fit(X_train.reshape(-1, 28, 28, 1))
+
 model = Sequential()
+
 model.add(Dense(512, activation='relu', input_shape=(inp_shape,)))
 model.add(Dense(512, activation='relu'))
+
 model.add(Dropout(0.4))
+
 model.add(Dense(512, activation='relu'))
 model.add(Dense(512, activation='relu'))
+
 model.add(Dense(unique_labels, activation='softmax'))
 
 callback = EarlyStopping(monitor='val_loss', patience=4)
@@ -78,7 +101,7 @@ run_model = model.fit(X_train, y_train_hot, batch_size=256, epochs=25, verbose=1
 
 [test_loss, test_acc] = model.evaluate(X_test, y_test_hot)
 
-print("Results model with 4 layers: Loss = {}, accuracy = {}".format(test_loss, test_acc))
+print("Results multi level perceptron: Loss = {}, accuracy = {}".format(test_loss, test_acc))
 
 ##
 
