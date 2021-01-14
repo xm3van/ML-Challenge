@@ -449,7 +449,7 @@ def extract_top_5(test):
                 
                 prob_sum += test[ind][c][1] #prob 
 
-            p_set[cap] = prob_sum
+            p_set[int(cap)] = prob_sum
 
     #extrat 5 most likely predictions
     t5_list = sorted(p_set.items(), key=lambda x:x[-1], reverse = True)[:5]
@@ -496,7 +496,6 @@ for captcha in captchas:
     ##detect contours of all images 
     contours, _ = cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     
-    #print (contours, f"hierachy: {hierachy}")
     #------contour filtration-----#
     
     ##contours smaller than 30 pixels excluded
@@ -584,5 +583,5 @@ for captcha in captchas:
     
 ## Store pred in csv 
 csv_pred = np.array(final_pred)
-np.savetxt("prediction.csv", csv_pred, fmt="08%d", delimiter=",")
+np.savetxt("prediction.csv", csv_pred, fmt='%08d', delimiter=",")
 
